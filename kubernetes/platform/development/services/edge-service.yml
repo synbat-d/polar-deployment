@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-service
+  labels:
+    app: edge-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-service
+  template:
+    metadata:
+      labels:
+        app: edge-service
+    spec:
+      containers:
+        - name: edge-service
+          image: edge-service
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            # Говорим сервису, где искать конфиги (порт 80, как мы настроили)
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config-service
+            # Указываем активный профиль
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-service
+  labels:
+    app: edge-service
+spec:
+  type: NodePort # Делает сервис доступным снаружи Minikube
+  selector:
+    app: edge-service
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+      nodePort: 30000 # Порт, по которому будем заходить из браузера

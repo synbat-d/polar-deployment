@@ -1,9 +1,32 @@
+# 1. СКРИПТ ИНИЦИАЛИЗАЦИИ
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+data:
+  init.sql: |
+    CREATE DATABASE polardb_catalog;
+    CREATE DATABASE polardb_order;
+
+---
+# 2. ЖЕСТКИЙ ДИСК
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+
+---
+# 3. КОНТЕЙНЕР (ПОД)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: polar-postgres
-  labels:
-    db: polar-postgres
 spec:
   selector:
     matchLabels:
@@ -20,19 +43,26 @@ spec:
             - name: POSTGRES_USER
               value: user
             - name: POSTGRES_PASSWORD
-              value: password 
-            - name: POSTGRES_DB
-              value: polardb_catalog
-          resources:
-            requests:
-              cpu: 100m
-              memory: 60Mi
-            limits:
-              cpu: 200m
-              memory: 120Mi
+              value: password
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            # Подключаем диск сюда (стандартный путь данных Postgres)
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            # Подключаем наш скрипт сюда (спец. папка Postgres для автозапуска SQL)
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: init-script
+          configMap:
+            name: postgres-init-script
 
 ---
-
+# 4. СЕТЕВОЙ АДРЕС
 apiVersion: v1
 kind: Service
 metadata:
