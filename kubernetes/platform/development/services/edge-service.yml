@@ -24,6 +24,8 @@ spec:
             # Говорим сервису, где искать конфиги (порт 80, как мы настроили)
             - name: SPRING_CLOUD_CONFIG_URI
               value: http://config-service
+            - name: SPA_URL
+              value: http://polar-ui
             # Указываем активный профиль
             - name: SPRING_PROFILES_ACTIVE
               value: docker
@@ -35,11 +37,10 @@ metadata:
   labels:
     app: edge-service
 spec:
-  type: NodePort # Делает сервис доступным снаружи Minikube
+  type: ClusterIP
   selector:
     app: edge-service
   ports:
     - protocol: TCP
-      port: 9000
+      port: 80
       targetPort: 9000
-      nodePort: 30000 # Порт, по которому будем заходить из браузера
