@@ -4,6 +4,7 @@ services:
     container_name: "config-service"
     ports:
       - 8888:8888
+      - 9888:9888
     logging:
       driver: "fluentd"
       options:
@@ -25,18 +26,24 @@ services:
     container_name: edge-service
     ports:
       - "9000:9000"
+      - "8000:8000"
     environment:
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_CLOUD_CONFIG_FAIL_FAST=false
       # Настройки Redis
       - SPRING_DATA_REDIS_HOST=polar-redis
       # Настройки для Circuit Breaker и тайм-аутов (если нужно переопределить)
       - CATALOG_SERVICE_URL=http://catalog-service:9001
       - ORDER_SERVICE_URL=http://order-service:9002
-      - KEYCLOAK_URI=http://polar-keycloak:8080
       - SPA_URL=http://polar-ui:9004
-      - REDIS_HOST=polar-redis
       - REDIS_PORT=6379
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=edge-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
     depends_on:
       fluent-bit:
         condition: service_started
@@ -44,6 +51,10 @@ services:
         condition: service_healthy
       polar-redis:
         condition: service_healthy
+      polar-keycloak:
+        condition: service_started
+      polar-ui:
+        condition: service_started
     logging:
       driver: "fluentd"
       options:
@@ -55,11 +66,11 @@ services:
     depends_on:
       polar-postgres:
         condition: service_started
-      config-service:
-        condition: service_healthy
       fluent-bit:
         condition: service_started
       polar-keycloak:
+        condition: service_started
+      tempo:
         condition: service_started
     image: "catalog-service"
     container_name: "catalog-service"
@@ -67,14 +78,18 @@ services:
       - 9001:9001
       - 8001:8001
     environment:
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
       - BPL_JVM_THREAD_COUNT=50
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8001
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=catalog-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres:5432/polardb_catalog
       - SPRING_PROFILES_ACTIVE=testdata
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
-      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
-      - KEYCLOAK_URI=http://polar-keycloak:8080
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
     logging:
       driver: "fluentd"
       options:
@@ -93,23 +108,27 @@ services:
         condition: service_healthy
       polar-keycloak:
         condition: service_started
+      polar-rabbitmq:
+        condition: service_started
     image: "order-service"
     container_name: "order-service"
     ports:
       - 9002:9002
+      - 8002:8002
     environment:
-      - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
-      - SPRING_R2DBC_USERNAME=user
-      - SPRING_R2DBC_PASSWORD=password
-      - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres:5432/polardb_order
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8002
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=order-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
       - POLAR_CATALOG_SERVICE_URI=http://catalog-service:9001
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
-      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+      - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
+      - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres:5432/polardb_order
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=user
-      - SPRING_RABBITMQ_PASSWORD=password
-      - KEYCLOAK_URI=http://polar-keycloak:8080
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
     logging:
       driver: "fluentd"
       options:
@@ -127,7 +146,15 @@ services:
     container_name: "dispatcher-service"
     ports:
       - 9003:9003
+      - 8003:8003
     environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8003
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=dispatcher-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=user
@@ -267,6 +294,18 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - polar-network
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: tempo
+    command: -config.file=/etc/tempo-config.yml
+    ports:
+      - "3110:3100"     # Tempo
+      - "4317:4317"     # OTel
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo-config.yml
     networks:
       - polar-network
 
