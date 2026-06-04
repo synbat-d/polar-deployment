@@ -9,4 +9,4 @@
           - name: catalog-service
             env:
               - name: SPRING_PROFILES_ACTIVE
-                value: prod
+                value: staging
