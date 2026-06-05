@@ -16,4 +16,4 @@ images:
 
 replicas:
   - name: dispatcher-service
-    count: 2
+    count: 1

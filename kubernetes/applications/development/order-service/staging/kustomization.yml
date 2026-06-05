@@ -16,4 +16,4 @@ images:
 
 replicas:
   - name: order-service
-    count: 2
+    count: 1
