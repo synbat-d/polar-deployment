@@ -1,0 +1,45 @@
+fullnameOverride: polar-keycloak
+commonAnnotations:
+  app: polar-keycloak
+image:
+  registry: europe-west4-docker.pkg.dev
+  repository: polar-bookshop-synbat/polar/keycloak
+  tag: 26.3.3-debian-12-r0
+extraEnvVars:
+  - name: KEYCLOAK_EXTRA_ARGS
+    value: "--import-realm"
+  - name: KC_HTTP_ENABLED
+    value: "true"
+  - name: KC_HOSTNAME_STRICT_HTTPS
+    value: "false"
+  - name: KC_HOSTNAME_STRICT
+    value: "false"
+extraVolumeMounts:
+  - name: config-volume
+    mountPath: "/opt/bitnami/keycloak/data/import"
+    readOnly: true
+extraVolumes:
+  - name: config-volume
+    configMap:
+      name: keycloak-config
+startupProbe:
+  enabled: true
+resources:
+  requests:
+    cpu: 0.2
+    memory: 756Mi
+  limits:
+    cpu: 2
+    memory: 756Mi
+service:
+  type: LoadBalancer
+  port: 80
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: 34.178.105.153
+  port: 5432
+  user: user
+  password: password
+  database: polardb_keycloak

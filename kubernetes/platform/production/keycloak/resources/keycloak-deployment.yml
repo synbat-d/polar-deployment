@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polar-keycloak
+  namespace: keycloak-system
+  labels:
+    app: polar-keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: polar-keycloak
+  template:
+    metadata:
+      labels:
+        app: polar-keycloak
+        app.kubernetes.io/component: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.3.3
+          args: ["start-dev", "--import-realm"]
+          env:
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: "false"
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: jdbc:postgresql://34.178.105.153:5432/polardb_keycloak
+            - name: KC_DB_USERNAME
+              value: user
+            - name: KC_DB_PASSWORD
+              value: password
+            - name: KEYCLOAK_ADMIN
+              value: user
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: password
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config-volume
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: keycloak-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: polar-keycloak
+  namespace: keycloak-system
+  labels:
+    app: polar-keycloak
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: polar-keycloak
