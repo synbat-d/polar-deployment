@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- github.com/synbat-d/edge-service/k8s?ref=29e2a4253be79f39efc6501914d5dd4deab9e037
+- github.com/synbat-d/edge-service/k8s?ref=74529e30a70289e7ef3e92981874d23852e95e33
 
 patchesStrategicMerge:
 - patch-env.yml
@@ -19,7 +19,7 @@ configMapGenerator:
 images:
 - name: edge-service
   newName: ghcr.io/synbat-d/edge-service
-  newTag: 29e2a4253be79f39efc6501914d5dd4deab9e037
+  newTag: 74529e30a70289e7ef3e92981874d23852e95e33
 
 replicas:
 - count: 1
