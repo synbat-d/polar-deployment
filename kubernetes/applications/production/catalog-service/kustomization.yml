@@ -1,21 +1,26 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
-- github.com/synbat-d/catalog-service/k8s?ref=7e1170bd2b261255fa544eae0d2d22fe59f08648
+  - github.com/synbat-d/catalog-service/k8s?ref=7e1170bd2b261255fa544eae0d2d22fe59f08648
+
 patchesStrategicMerge:
-- patch-env.yml
-- patch-volumes.yml
-- patch-resources.yml
+  - patch-env.yml
+  - patch-volumes.yml
+  - patch-resources.yml
+
 configMapGenerator:
-- behavior: merge
-  files:
-  - application-prod.yml
-  name: catalog-config
+  - behavior: merge
+    files:
+      - application-prod.yml
+    name: catalog-config
+
 images:
-- name: catalog-service
-  newName: ghcr.io/synbat-d/catalog-service
-  newTag: 7e1170bd2b261255fa544eae0d2d22fe59f08648
+  - name: catalog-service
+    newName: ghcr.io/synbat-d/catalog-service
+    newTag: 7e1170bd2b261255fa544eae0d2d22fe59f08648
+
 
 replicas:
-- count: 2
-  name: catalog-service
+  - count: 2
+    name: catalog-service
