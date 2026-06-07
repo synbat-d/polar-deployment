@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- github.com/synbat-d/order-service/k8s?ref=f98935cb2f8b8671e614b9dd062ae75332a976e5main
+- github.com/synbat-d/order-service/k8s?ref=f98935cb2f8b8671e614b9dd062ae75332a976e5
 
 patchesStrategicMerge:
 - patch-env.yml
