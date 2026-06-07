@@ -2,24 +2,24 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - github.com/synbat-d/dispatcher-service/k8s?ref=main
+- github.com/synbat-d/dispatcher-service/k8s?ref=d5ce3e70ebc13678c4082296d7f687cce1c7b85bmain
 
 patchesStrategicMerge:
-  - patch-env.yml
-  - patch-resources.yml
-  - patch-volumes.yml
+- patch-env.yml
+- patch-resources.yml
+- patch-volumes.yml
 
 configMapGenerator:
-  - behavior: merge
-    files:
-      - application-prod.yml
-    name: dispatcher-config
+- behavior: merge
+  files:
+  - application-prod.yml
+  name: dispatcher-config
 
 images:
-  - name: dispatcher-service
-    newName: ghcr.io/synbat-d/dispatcher-service
-    newTag: latest
+- name: dispatcher-service
+  newName: ghcr.io/synbat-d/dispatcher-service
+  newTag: d5ce3e70ebc13678c4082296d7f687cce1c7b85b
 
 replicas:
-  - count: 1
-    name: dispatcher-service
+- count: 1
+  name: dispatcher-service
